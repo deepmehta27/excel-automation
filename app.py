@@ -15,9 +15,9 @@ st.set_page_config(
 )
 
 # Environment variables - WhatsApp number is FIXED, not user input
-WASENDER_API_KEY = os.getenv("WASENDER_API_KEY", "a54252323480a478ee585095d0205244aa611d5de6d66f9b74fdbb59ad3aba3f")
-WASENDER_SESSION_ID = os.getenv("WASENDER_SESSION_ID", "Initial Session")
-WA_TO = os.getenv("WA_TO", "17324850054")  # Fixed WhatsApp number
+WASENDER_API_KEY = os.getenv("WASENDER_API_KEY")
+WASENDER_SESSION_ID = os.getenv("WASENDER_SESSION_ID")
+WA_TO = os.getenv("WA_TO")  # Fixed WhatsApp number
 
 # Your existing column allow-list
 WANTED_COLS = [
