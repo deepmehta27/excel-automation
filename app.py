@@ -46,9 +46,7 @@ def norm(s: str) -> str:
     s = re.sub(r"\s+", " ", s)
     return s
 
-WANTED_NORM = [norm(c) for c in WANTED_COLS]
-
-def process_excel(file_bytes: bytes) -> pd.DataFrame:
+def process_excel(file_bytes: bytes, wanted_norm: list[str]) -> pd.DataFrame:
     bio = io.BytesIO(file_bytes)
     df = pd.read_excel(bio, dtype=str, engine="openpyxl", header=None)
     df = df.fillna("")
@@ -131,6 +129,21 @@ uploaded_file = st.file_uploader("Select Excel File", type=["xlsx", "xls", "csv"
 # Filename input
 filename = st.text_input("Filename (e.g., report123)", value="", placeholder="Enter filename")
 
+# Extra columns input
+extra_cols_input = st.text_input(
+    "Additional columns to include (comma-separated)",
+    placeholder="e.g., REMARKS, CATEGORY, DATE",
+)
+
+# Process user input into a clean list
+extra_cols = []
+if extra_cols_input.strip():
+    extra_cols = [c.strip() for c in extra_cols_input.split(",") if c.strip()]
+
+# Merge with your predefined allow-list
+WANTED_COLS_FINAL = WANTED_COLS + extra_cols
+WANTED_NORM = [norm(c) for c in WANTED_COLS_FINAL]
+
 # Submit button
 if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_width=True):
     if not uploaded_file:
@@ -142,7 +155,7 @@ if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_wid
             with st.spinner("Processing Excel file..."):
                 # Read and process
                 file_bytes = uploaded_file.read()
-                filtered_df = process_excel(file_bytes)
+                filtered_df = process_excel(file_bytes, WANTED_NORM)
                 
                 # Convert to Excel bytes
                 output = io.BytesIO()
