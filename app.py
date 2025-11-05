@@ -25,14 +25,16 @@ WANTED_COLS = [
     "NO","PRODUCT ID","PRODUCT","STYLE","QTY","G Qly","Gr. WT","Nt. WT",
     "ITEMCODE","STONE PCS","STONE WT","STONE RATE","STONE AMT",
     "BEADS PCS","BEADS WT","BEADS RATE","BEADS AMT",
-    "DIA PCS","DIA WT","SR NO","LAB","REPORT","LOT NUMBER","GIVEN TO",
+    "DIA PCS","DIA WT","SR NO","SR.NO.","Sr.No","SR. NO",
+    "LAB","REPORT","LOT NUMBER","GIVEN TO",
     "SHAPE","WT.","COL","CLA","CUT","POL","SYM","FLO",
     "STK","SIZE","MM","CRTS.","PCS.","COLOR","CLARITY",
     "CODE","JOB NO","ITEM","DESIGN NO.","METAL AND CLR.","GROSS WT.",
     "NET WT.","METAL AMT.","DIAMOND PCS","STUDDING TYPE",
     "STUDDING WT","QUALITY","DIAMOND TYPE",
     "SIZE (mm)","PIECES","CARAT","TYPE",
-    "PARTICULAR","CTS"
+    "PARTICULAR","CTS","cts.","PURITY","TOTAL PCS","CARATS",
+    "DESCRIPTION","COLOUR","PCS/CT","PCS PER CT"
 ]
 
 def norm(s: str) -> str:
@@ -109,7 +111,7 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
             "to": to.replace("+", ""),
             "documentUrl": temp_url,
             "fileName": filename,
-            "text": f"📄 {filename}\n\nYour processed Excel file!"
+            "text": ""
         },
         timeout=60
     )
