@@ -108,7 +108,7 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
         json={
             "to": to.replace("+", ""),
             "documentUrl": temp_url,
-            "fileName": filename,
+            "fileName": final_filename,
             "text": "\u200B"
         },
         timeout=60
