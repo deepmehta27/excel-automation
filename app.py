@@ -34,7 +34,10 @@ WANTED_COLS = [
     "STUDDING WT","QUALITY","DIAMOND TYPE",
     "SIZE (mm)","PIECES","CARAT","TYPE",
     "PARTICULAR","CTS","cts.","PURITY","TOTAL PCS","CARATS",
-    "DESCRIPTION","COLOUR","PCS/CT","PCS PER CT"
+    "DESCRIPTION","COLOUR","PCS/CT","PCS PER CT",
+
+    "Description of Goods", "HSN CODE", "PCS/CTS", "PCS",
+    "STONE TYPE", "Stone ID", "Cert", "Ratio", "Table", "Depth",
 ]
 
 def norm(s: str) -> str:
@@ -46,12 +49,23 @@ def norm(s: str) -> str:
     s = re.sub(r"\s+", " ", s)
     return s
 
-def process_excel(file_bytes: bytes, wanted_norm: list[str]) -> pd.DataFrame:
+def process_excel(file_bytes: bytes, wanted_norm: list[str], file_ext: str) -> pd.DataFrame:
     bio = io.BytesIO(file_bytes)
-    df = pd.read_excel(bio, dtype=str, engine="openpyxl", header=None)
+
+    # Read file depending on type
+    if file_ext == "csv":
+        df = pd.read_csv(bio, dtype=str, header=None)
+    else:
+        # xlsx / xls
+        if file_ext == "xls":
+            engine = "xlrd"
+        else:
+            engine = "openpyxl"
+        df = pd.read_excel(bio, dtype=str, engine=engine, header=None)
+
     df = df.fillna("")
-    
-    # Find header row
+    # --- rest of your existing logic below stays same ---
+    # Find header row...
     best_idx = -1
     best_score = -1
     for i in range(min(300, len(df))):
@@ -59,20 +73,19 @@ def process_excel(file_bytes: bytes, wanted_norm: list[str]) -> pd.DataFrame:
         score = sum(1 for v in vals if norm(v) in WANTED_NORM)
         if score > best_score:
             best_idx, best_score = i, score
-    
+
     if best_idx < 0:
         raise ValueError("Could not find header row matching allow-list")
-    
-    # Filter columns
+
     header_vals = [str(v) for v in df.iloc[best_idx].tolist()]
     body = df.iloc[best_idx+1:].reset_index(drop=True)
     body.columns = header_vals
     nm = {c: norm(c) for c in body.columns}
     keep = [c for c in body.columns if nm[c] in WANTED_NORM]
-    
+
     if not keep:
         raise ValueError("No matching columns found")
-    
+
     return body[keep]
 
 def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
@@ -121,10 +134,19 @@ st.title("📊 Excel to WhatsApp")
 st.markdown("Upload your Excel file (.xlsx, .xls, .csv) and send to WhatsApp instantly.")
 
 # File upload
+# File upload
 uploaded_file = st.file_uploader("Select Excel File", type=["xlsx", "xls", "csv"])
 
-# Filename input
-filename = st.text_input("Filename (e.g., report123)", value="", placeholder="Enter filename")
+# Default filename from uploaded file (without extension)
+default_name = ""
+if uploaded_file is not None and uploaded_file.name:
+    default_name = uploaded_file.name.rsplit(".", 1)[0]
+
+filename = st.text_input(
+    "Filename (optional – defaults to uploaded name)",
+    value=default_name,
+    placeholder="Enter filename (or leave as is)"
+)
 
 # Extra columns input
 extra_cols_input = st.text_input(
@@ -145,22 +167,23 @@ WANTED_NORM = [norm(c) for c in WANTED_COLS_FINAL]
 if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_width=True):
     if not uploaded_file:
         st.error("⚠️ Please select a file")
-    elif not filename:
-        st.error("⚠️ Please enter a filename")
     else:
         try:
             with st.spinner("Processing Excel file..."):
-                # Read and process
                 file_bytes = uploaded_file.read()
-                filtered_df = process_excel(file_bytes, WANTED_NORM)
-                
-                # Convert to Excel bytes
+                file_ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
+
+                filtered_df = process_excel(file_bytes, WANTED_NORM, file_ext)
+
                 output = io.BytesIO()
                 filtered_df.to_excel(output, index=False, engine="openpyxl")
                 processed_bytes = output.getvalue()
-                
-                # Add .xlsx extension
-                final_filename = filename if filename.endswith(".xlsx") else f"{filename}.xlsx"
+
+                # Use typed name if provided, otherwise original base name
+                base_name = (filename or default_name or "report").strip()
+                final_filename = base_name
+                if not final_filename.lower().endswith(".xlsx"):
+                    final_filename = f"{base_name}.xlsx"
                 
             with st.spinner(f"Sending to WhatsApp ({WA_TO})..."):
                 result = send_to_whatsapp(processed_bytes, final_filename, WA_TO)
