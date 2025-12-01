@@ -81,7 +81,6 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
     mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     data_url = f"data:{mime_type};base64,{base64_data}"
     
-    # Upload
     upload_url = "https://www.wasenderapi.com/api/upload"
     headers = {
         "Authorization": f"Bearer {WASENDER_API_KEY}",
@@ -100,7 +99,6 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
     
     temp_url = upload_response.json().get("publicUrl")
     
-    # Send
     send_url = "https://www.wasenderapi.com/api/send-message"
     send_response = requests.post(
         send_url,
@@ -108,7 +106,7 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
         json={
             "to": to.replace("+", ""),
             "documentUrl": temp_url,
-            "fileName": final_filename,
+            "fileName": filename, 
             "text": "\u200B"
         },
         timeout=60
