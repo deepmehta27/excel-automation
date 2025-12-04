@@ -38,6 +38,10 @@ WANTED_COLS = [
 
     "Description of Goods", "HSN CODE", "PCS/CTS", "PCS",
     "STONE TYPE", "Stone ID", "Cert", "Ratio", "Table", "Depth",
+    
+    "Cert.", "CertificateNo", "Diameter",
+    "SETIAL", "WEIGHT", "MM SIZE", "PT",
+
 ]
 
 def norm(s: str) -> str:
