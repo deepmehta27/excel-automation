@@ -39,7 +39,7 @@ WANTED_COLS = [
     "Description of Goods", "HSN CODE", "PCS/CTS", "PCS",
     "STONE TYPE", "Stone ID", "Cert", "Ratio", "Table", "Depth",
     
-    "Cert.", "CertificateNo", "Diameter",
+    "Cert.", "Cert. No.", "CertificateNo", "Diameter",
     "SETIAL", "WEIGHT", "MM SIZE", "PT",
 
 ]
@@ -139,18 +139,24 @@ st.markdown("Upload your Excel file (.xlsx, .xls, .csv) and send to WhatsApp ins
 
 # File upload
 # File upload
-uploaded_file = st.file_uploader("Select Excel File", type=["xlsx", "xls", "csv"])
-
-# Default filename from uploaded file (without extension)
-default_name = ""
-if uploaded_file is not None and uploaded_file.name:
-    default_name = uploaded_file.name.rsplit(".", 1)[0]
-
-filename = st.text_input(
-    "Filename (optional – defaults to uploaded name)",
-    value=default_name,
-    placeholder="Enter filename (or leave as is)"
+uploaded_files = st.file_uploader(
+    "Select Excel Files",
+    type=["xlsx", "xls", "csv"],
+    accept_multiple_files=True
 )
+
+rename_map = {}
+
+if uploaded_files:
+    st.write("### Rename files (optional)")
+    for file in uploaded_files:
+        default_base = file.name.rsplit(".", 1)[0]
+        new_name = st.text_input(
+            f"Rename for {file.name} (optional)",
+            value=default_base,
+            key=file.name  # unique key for each file
+        )
+        rename_map[file.name] = new_name
 
 # Extra columns input
 extra_cols_input = st.text_input(
@@ -169,34 +175,35 @@ WANTED_NORM = [norm(c) for c in WANTED_COLS_FINAL]
 
 # Submit button
 if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_width=True):
-    if not uploaded_file:
-        st.error("⚠️ Please select a file")
+
+    if not uploaded_files:
+        st.error("⚠️ Please select at least one file")
     else:
         try:
-            with st.spinner("Processing Excel file..."):
+            for uploaded_file in uploaded_files:
                 file_bytes = uploaded_file.read()
                 file_ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
 
+                # Process
                 filtered_df = process_excel(file_bytes, WANTED_NORM, file_ext)
 
                 output = io.BytesIO()
                 filtered_df.to_excel(output, index=False, engine="openpyxl")
                 processed_bytes = output.getvalue()
 
-                # Use typed name if provided, otherwise original base name
-                base_name = (filename or default_name or "report").strip()
-                final_filename = base_name
-                if not final_filename.lower().endswith(".xlsx"):
-                    final_filename = f"{base_name}.xlsx"
-                
-            with st.spinner(f"Sending to WhatsApp ({WA_TO})..."):
-                result = send_to_whatsapp(processed_bytes, final_filename, WA_TO)
-            
-            # Clean success message - NO JSON display
-            st.success(f"✅ File sent successfully to WhatsApp ({WA_TO})!")
-            
+                # Determine filename
+                base_name = rename_map.get(uploaded_file.name, uploaded_file.name.rsplit(".", 1)[0])
+                final_filename = base_name + ".xlsx"
+
+                # Send
+                with st.spinner(f"Sending {final_filename} to WhatsApp..."):
+                    send_to_whatsapp(processed_bytes, final_filename, WA_TO)
+
+                st.success(f"✅ Sent: {final_filename}")
+
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
+
 
 # Footer
 st.markdown("---")
