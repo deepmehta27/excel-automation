@@ -6,6 +6,7 @@ import requests
 import re
 import unicodedata
 import base64
+import time
 
 # Page config
 st.set_page_config(
@@ -200,6 +201,7 @@ if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_wid
                     send_to_whatsapp(processed_bytes, final_filename, WA_TO)
 
                 st.success(f"✅ Sent: {final_filename}")
+                time.sleep(7)
 
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
