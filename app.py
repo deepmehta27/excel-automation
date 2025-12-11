@@ -39,19 +39,25 @@ WANTED_COLS = [
     "Description of Goods", "HSN CODE", "PCS/CTS", "PCS",
     "STONE TYPE", "Stone ID", "Cert", "Ratio", "Table", "Depth",
     "Cert.", "Cert. No.", "CertificateNo", "Diameter",
-    "SETIAL", "WEIGHT", "MM SIZE", "PT",
+    "SETIAL", "WEIGHT", "MM SIZE", "PT", "Sieve","Quantity"
     "Cert. No", "SIZE RANGE","POLISH","MEASUREMENT","RATIO",
-    "CERT NUMBER","FL",
+    "CERT NUMBER","FL", "CertificateNum", "Stock #", "Vama Lot No",
 ]
 
 def norm(s: str) -> str:
-    s = unicodedata.normalize("NFKC", str(s or ""))
+    s = unicodedata.normalize("NFKC", str(s or "")).strip()
+
+    # If column name starts with non-alphanumeric → treat as invalid column
+    if not re.match(r"^[A-Za-z0-9]", s):
+        return ""   # This will automatically exclude it
+
     s = s.replace("\u00a0", " ")
-    s = s.strip().lower()
+    s = s.lower()
     s = re.sub(r"[\s._\-]+", " ", s)
     s = re.sub(r"[^a-z0-9 ]+", "", s)
     s = re.sub(r"\s+", " ", s)
     return s
+
 
 def process_excel(file_bytes: bytes, wanted_norm: list[str], file_ext: str) -> pd.DataFrame:
     bio = io.BytesIO(file_bytes)
