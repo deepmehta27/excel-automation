@@ -1,2 +1,3 @@
 .env
 test_local_convert.py
+test_data/
