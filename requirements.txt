@@ -3,3 +3,4 @@ pandas
 openpyxl
 requests
 xlrd==1.2.0
+boto3
