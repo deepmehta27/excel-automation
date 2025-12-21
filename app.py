@@ -150,6 +150,10 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
 st.title("📊 Excel to WhatsApp")
 st.markdown("Upload Excel files and send filtered data to WhatsApp.")
 
+# 🔧 INIT SESSION STATE (IMPORTANT)
+if "column_added_msg" not in st.session_state:
+    st.session_state.column_added_msg = None
+    
 # -------- Permanent Column Input --------
 st.markdown("### ➕ Add Column (Permanent)")
 
@@ -163,13 +167,28 @@ if st.button("Add Column Permanently"):
         st.warning("Column name cannot be empty")
     else:
         cols = load_allowed_columns()
-        if norm(new_col) in [norm(c) for c in cols]:
-            st.warning("Column already exists")
+
+        # ✅ SUPPORT COMMA-SEPARATED INPUT
+        input_cols = [c.strip() for c in new_col.split(",") if c.strip()]
+        existing_norms = [norm(c) for c in cols]
+
+        added = []
+        for col in input_cols:
+            if norm(col) not in existing_norms:
+                cols.append(col)
+                added.append(col)
+
+        if not added:
+            st.warning("All columns already exist")
         else:
-            cols.append(new_col.strip())
             save_allowed_columns(cols)
-            st.success(f"✅ Column '{new_col}' added permanently")
+            st.session_state.column_added_msg = (
+                f"✅ Added columns: {', '.join(added)}"
+            )
             st.rerun()
+            
+if st.session_state.column_added_msg:
+    st.success(st.session_state.column_added_msg)
 
 # -------- Load Columns --------
 DB_COLS = load_allowed_columns()
