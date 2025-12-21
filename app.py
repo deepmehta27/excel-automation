@@ -169,7 +169,7 @@ if st.button("Add Column Permanently"):
             cols.append(new_col.strip())
             save_allowed_columns(cols)
             st.success(f"✅ Column '{new_col}' added permanently")
-            st.experimental_rerun()
+            st.rerun()
 
 # -------- Load Columns --------
 DB_COLS = load_allowed_columns()
