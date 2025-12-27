@@ -8,6 +8,7 @@ import unicodedata
 import base64
 import time
 import boto3
+import json
 from botocore.exceptions import ClientError
 
 # =========================
@@ -28,9 +29,8 @@ st.set_page_config(
 # =========================
 # Environment variables
 # =========================
-WASENDER_API_KEY = os.getenv("WASENDER_API_KEY")
-WASENDER_SESSION_ID = os.getenv("WASENDER_SESSION_ID")
-WA_TO = os.getenv("WA_TO")
+RAW_SENDERS = os.getenv("WASENDER_SENDERS", "[]")
+WASENDER_SENDERS = json.loads(RAW_SENDERS)
 
 # =========================
 # Helpers
@@ -108,17 +108,19 @@ def process_excel(file_bytes: bytes, wanted_norm: list[str], file_ext: str) -> p
 # =========================
 # WhatsApp Sender
 # =========================
-def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
+def send_to_whatsapp(file_bytes: bytes, filename: str, sender: dict) -> dict:
     base64_data = base64.b64encode(file_bytes).decode("utf-8")
     mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     data_url = f"data:{mime_type};base64,{base64_data}"
 
+    headers = {
+        "Authorization": f"Bearer {sender['api_key']}",
+        "Content-Type": "application/json",
+    }
+
     upload_response = requests.post(
         "https://www.wasenderapi.com/api/upload",
-        headers={
-            "Authorization": f"Bearer {WASENDER_API_KEY}",
-            "Content-Type": "application/json",
-        },
+        headers=headers,
         json={"base64": data_url},
         timeout=60,
     )
@@ -130,9 +132,10 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
 
     send_response = requests.post(
         "https://www.wasenderapi.com/api/send-message",
-        headers={"Authorization": f"Bearer {WASENDER_API_KEY}"},
+        headers=headers,
         json={
-            "to": to.replace("+", ""),
+            "sessionId": sender["session_id"],
+            "to": sender["wa_to"],
             "documentUrl": temp_url,
             "fileName": filename,
         },
@@ -143,6 +146,7 @@ def send_to_whatsapp(file_bytes: bytes, filename: str, to: str) -> dict:
         raise Exception(f"Send failed: {send_response.text}")
 
     return send_response.json()
+
 
 # =========================
 # UI
@@ -197,6 +201,19 @@ if not DB_COLS:
 
 WANTED_NORM = [norm(c) for c in DB_COLS]
 
+st.markdown("### 📱 Select WhatsApp Sender")
+
+labels = [s["label"] for s in WASENDER_SENDERS]
+
+selected_label = st.selectbox(
+    "Send files from",
+    labels
+)
+
+selected_sender = next(
+    s for s in WASENDER_SENDERS if s["label"] == selected_label
+)
+
 # -------- File Upload --------
 uploaded_files = st.file_uploader(
     "Select Excel Files",
@@ -235,7 +252,11 @@ if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_wid
                 final_filename = base_name + ".xlsx"
 
                 with st.spinner(f"Sending {final_filename}..."):
-                    send_to_whatsapp(processed_bytes, final_filename, WA_TO)
+                    send_to_whatsapp(
+                                processed_bytes,
+                                final_filename,
+                                selected_sender
+                            )
 
                 st.success(f"✅ Sent: {final_filename}")
                 time.sleep(7)
