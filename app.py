@@ -203,6 +203,10 @@ WANTED_NORM = [norm(c) for c in DB_COLS]
 
 st.markdown("### 📱 Select WhatsApp Sender")
 
+if not WASENDER_SENDERS:
+    st.error("❌ No WhatsApp senders configured. Please contact admin.")
+    st.stop()
+
 labels = [s["label"] for s in WASENDER_SENDERS]
 
 selected_label = st.selectbox(
@@ -213,6 +217,7 @@ selected_label = st.selectbox(
 selected_sender = next(
     s for s in WASENDER_SENDERS if s["label"] == selected_label
 )
+
 
 # -------- File Upload --------
 uploaded_files = st.file_uploader(
