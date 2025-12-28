@@ -51,6 +51,10 @@ def load_senders():
 
 WASENDER_SENDERS = load_senders()
 
+if not WASENDER_SENDERS:
+    st.error("❌ No WhatsApp senders loaded from environment variables.")
+    st.stop()
+    
 # =========================
 # Helpers
 # =========================
@@ -234,8 +238,13 @@ selected_label = st.selectbox(
 )
 
 selected_sender = next(
-    s for s in WASENDER_SENDERS if s["label"] == selected_label
+    (s for s in WASENDER_SENDERS if s["label"] == selected_label),
+    None
 )
+
+if not selected_sender:
+    st.error("❌ Selected sender not found. Please contact admin.")
+    st.stop()
 
 
 # -------- File Upload --------
