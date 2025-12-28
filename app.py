@@ -291,7 +291,9 @@ if st.button("📤 Upload & Send to WhatsApp", type="primary", use_container_wid
                                 selected_sender
                             )
 
-                st.success(f"✅ Sent: {final_filename}")
+                st.success(
+                f"✅ Sent: {final_filename} → {selected_sender['label']}"
+                )
                 time.sleep(7)
 
         except Exception as e:
