@@ -29,8 +29,27 @@ st.set_page_config(
 # =========================
 # Environment variables
 # =========================
-RAW_SENDERS = os.getenv("WASENDER_SENDERS", "[]")
-WASENDER_SENDERS = json.loads(RAW_SENDERS)
+def load_senders():
+    senders = []
+
+    for prefix in ["VISH", "ASHTIN"]:
+        label = os.getenv(f"WASENDER_SENDER_{prefix}_LABEL")
+        api_key = os.getenv(f"WASENDER_SENDER_{prefix}_API_KEY")
+        session_id = os.getenv(f"WASENDER_SENDER_{prefix}_SESSION_ID")
+        wa_to = os.getenv(f"WASENDER_SENDER_{prefix}_TO")
+
+        if all([label, api_key, session_id, wa_to]):
+            senders.append({
+                "label": label,
+                "api_key": api_key,
+                "session_id": session_id,
+                "wa_to": wa_to
+            })
+
+    return senders
+
+
+WASENDER_SENDERS = load_senders()
 
 # =========================
 # Helpers
